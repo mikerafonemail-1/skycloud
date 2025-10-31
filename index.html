@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Suite</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/black.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.js"></script>
+
+    
+    <style>
+        /* --- Reset & Base --- */
+        html, body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            overflow: hidden;
+        }
+        * { box-sizing: border-box; }
+
+        /* --- App Layout --- */
+        .app-layout {
+            display: flex;
+            height: 100vh;
+        }
+        .sidebar {
+            width: 240px;
+            background-color: #f8f9fa;
+            border-right: 1px solid #e0e0e0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* --- Sidebar --- */
+        .sidebar h1 {
+            font-size: 24px;
+            color: #3ecf8e;
+            margin: 0 0 20px 0;
+        }
+        .sidebar-nav { list-style: none; padding: 0; margin: 0; }
+        .sidebar-nav li {
+            padding: 12px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+        .sidebar-nav li:hover { background-color: #e9ecef; }
+        .sidebar-nav li.active { background-color: #e0f8eb; color: #36b17c; }
+        .storage-quota {
+            margin-top: auto;
+            font-size: 13px;
+        }
+        .storage-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        .storage-bar-fill {
+            height: 100%;
+            width: 0%; /* Updated by JS */
+            background-color: #3ecf8e;
+        }
+
+        /* --- Main Content Area --- */
+        .main-header {
+            padding: 15px 25px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .breadcrumbs { font-size: 18px; font-weight: 500; }
+        .breadcrumbs span { cursor: pointer; }
+        .breadcrumbs span:hover { text-decoration: underline; }
+        #new-button {
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: #3ecf8e;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        #logout-button {
+            padding: 8px 12px;
+            font-size: 14px;
+            color: #fff;
+            background-color: #dc3545;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .file-list-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .file-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .file-item:hover { background-color: #fff; border-color: #ddd; }
+        .file-item-icon { font-size: 20px; margin-right: 12px; }
+        .file-item-name { flex-grow: 1; }
+        .file-item-actions button {
+            background: none;
+            border: 1px solid #ccc;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            margin-left: 5px;
+            font-size: 16px;
+        }
+        .file-item-actions button:hover { background-color: #f0f0f0; }
+
+        /* --- Editor View --- */
+        #editor-view {
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            height: 100%;
+            flex-grow: 1;
+            background-color: #fff;
+        }
+        .editor-header {
+            padding: 10px 25px;
+            border-bottom: 1px solid #e0e0e0;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+        }
+        .editor-header #back-button {
+            font-size: 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            margin-right: 15px;
+        }
+        #editor-filename {
+            font-size: 18px;
+            font-weight: 500;
+            padding: 5px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
+        #editor-filename:focus {
+            outline: 2px solid #3ecf8e;
+            background: #fff;
+            border-color: #3ecf8e;
+        }
+        #present-button {
+            margin-left: 20px; 
+            width: auto; 
+            padding: 5px 15px;
+        }
+        #editor-status {
+            margin-left: auto;
+            font-style: italic;
+            color: #888;
+        }
+        #editor-container {
+            flex-grow: 1;
+            background-color: #fff;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; 
+        }
+        #quill-toolbar {
+            border-bottom: 1px solid #ccc;
+            flex-shrink: 0;
+        }
+        #quill-editor {
+            flex-grow: 1;
+            height: 100px;
+            overflow-y: auto;
+        }
+        .ql-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .ql-editor {
+            flex-grow: 1;
+        }
+        
+        /* --- NEW Slide Editor --- */
+        #slide-editor-container {
+            display: none; /* Hidden by default */
+            padding: 15px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        #slide-editor-textarea {
+            width: 100%;
+            flex-grow: 1;
+            font-family: monospace;
+            font-size: 16px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            resize: none;
+        }
+        #slide-editor-guide {
+            flex-shrink: 0;
+            padding-top: 15px;
+            font-size: 14px;
+            color: #555;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #eee;
+            margin-top: 10px;
+        }
+        #slide-editor-guide code {
+            background: #eee;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+
+        #spreadsheet-placeholder {
+            display: none;
+            padding: 30px;
+            text-align: center;
+            font-size: 20px;
+            color: #999;
+        }
+
+        /* --- Auth View --- */
+        #auth-container, #loading-container {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #f4f4f9;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        #loading-container { display: flex; }
+        .auth-box {
+            width: 100%;
+            max-width: 400px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+        }
+        .auth-form { display: none; }
+        .auth-form.active { display: block; }
+        .auth-form h2 { text-align: center; color: #4a4a4a; margin-top: 0; }
+        .auth-form input {
+            width: 100%; padding: 10px; margin-bottom: 15px;
+            border: 1px solid #ddd; border-radius: 6px; font-size: 16px;
+        }
+        .auth-button {
+            display: block; width: 100%; padding: 12px; font-size: 16px;
+            font-weight: bold; color: #fff; background-color: #3ecf8e;
+            border: none; border-radius: 6px; cursor: pointer; margin-bottom: 10px;
+        }
+        .auth-button:hover { background-color: #36b17c; }
+        .form-toggle {
+            color: #3ecf8e; text-decoration: underline; cursor: pointer;
+            text-align: center; display: block; margin-top: 15px;
+        }
+        .auth-error {
+            color: red; font-size: 14px; text-align: center;
+            margin-bottom: 10px; min-height: 1.2em;
+        }
+
+        /* --- Modal --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none; /* Changed to 'flex' by JS */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #fff; padding: 25px; border-radius: 8px;
+            width: 90%; max-width: 400px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        .modal-content h3 { margin-top: 0; }
+        .modal-content label { display: block; margin-bottom: 5px; font-weight: 500; }
+        .modal-content input, .modal-content select {
+            width: 100%; padding: 8px; margin-bottom: 15px;
+            border-radius: 4px; border: 1px solid #ccc;
+        }
+        .modal-share-row { display: flex; gap: 10px; }
+        .modal-share-row select { flex-basis: 100px; }
+        #current-shares-list { margin-top: 20px; font-size: 14px; }
+        .share-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 5px; border-bottom: 1px solid #eee;
+        }
+        .unshare-button {
+            background: none; border: none; color: red;
+            cursor: pointer; font-size: 16px;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 15px;
+        }
+        .modal-buttons button {
+            padding: 10px 15px; border-radius: 6px; border: none;
+            cursor: pointer; font-weight: 500;
+        }
+        .modal-buttons .btn-primary { background-color: #3ecf8e; color: white; }
+        .modal-buttons .btn-secondary { background-color: #888; color: white; }
+        
+        /* --- Presentation Modal --- */
+        #presentation-view {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: #000;
+            z-index: 3000;
+            display: none; /* Show by JS */
+        }
+        #presentation-close-button {
+            position: fixed;
+            top: 20px; right: 20px;
+            z-index: 3001;
+            background: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 40px;
+        }
+        /* This is the Reveal.js container */
+        .reveal {
+            width: 100%;
+            height: 100%;
+        }
+        /* Styles for parsed markdown */
+        .reveal section {
+            text-align: left; /* Default left-align for lists */
+        }
+        .reveal section h2 {
+            text-align: center; /* Center headings */
+        }
+        .reveal section p {
+            text-align: center; /* Center paragraphs */
+        }
+        .reveal section ul, .reveal section ol {
+            display: block; /* Make lists block elements */
+            margin: 20px auto;
+            width: 70%;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="loading-container">
+        <p>Loading...</p>
+    </div>
+
+    <div id="auth-container">
+        <div class="auth-box">
+            <div id="login-form" class="auth-form active">
+                <h2>Login</h2>
+                <p id="login-error" class="auth-error"></p>
+                <input type="email" id="login-email" placeholder="Email" required>
+                <input type="password" id="login-password" placeholder="Password" required>
+                <button id="login-button" class="auth-button">Login</button>
+                <a id="toggle-to-signup" class="form-toggle">Need an account? Sign Up</a>
+            </div>
+            <div id="signup-form" class="auth-form">
+                <h2>Sign Up</h2>
+                <p id="signup-error" class="auth-error"></p>
+                <input type="email" id="signup-email" placeholder="Email" required>
+                <input type="password" id="signup-password" placeholder="Password (min. 6 chars)" required>
+                <button id="signup-button" class="auth-button">Sign Up</button>
+                <a id="toggle-to-login" class="form-toggle">Have an account? Login</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-container" class="app-layout" style="display: none;">
+        <nav class="sidebar">
+            <h1>Pro Suite</h1>
+            <ul class="sidebar-nav">
+                <li id="nav-my-drive" class="active">My Drive</li>
+                <li id="nav-shared">Shared with Me</li>
+            </ul>
+            <div class="storage-quota">
+                <strong>Storage</strong>
+                <div id="storage-text">0 MB / 1 GB</div>
+                <div class="storage-bar">
+                    <div id="storage-bar-fill" class="storage-bar-fill"></div>
+                </div>
+            </div>
+        </nav>
+
+        <main id="file-view" class="main-content">
+            <header class="main-header">
+                <div id="breadcrumbs" class="breadcrumbs">
+                    </div>
+                <div>
+                    <button id="new-button">+ New</button>
+                    <button id="logout-button">Logout</button>
+                </div>
+            </header>
+            <div class="file-list-container">
+                <ul id="file-list" class="file-list">
+                    </ul>
+            </div>
+        </main>
+
+        <main id="editor-view" class="main-content">
+            <header class="editor-header">
+                <button id="back-button" title="Back to files">&larr;</button>
+                <input type="text" id="editor-filename">
+                <button id="present-button" class="auth-button" style="display:none;">Present</button>
+                <div id="editor-status"></div>
+            </header>
+            <div id="editor-container">
+                <div id="quill-toolbar">
+                    <span class="ql-formats">
+                        <select class="ql-font"></select>
+                        <select class="ql-size"></select>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-bold"></button>
+                        <button class="ql-italic"></button>
+                        <button class="ql-underline"></button>
+                        <button class="ql-strike"></button>
+                    </span>
+                    <span class="ql-formats">
+                        <select class="ql-color"></select>
+                        <select class="ql-background"></select>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-script" value="sub"></button>
+                        <button class="ql-script" value="super"></button>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-header" value="1"></button>
+                        <button class="ql-header" value="2"></button>
+                        <button class="ql-blockquote"></button>
+                        <button class="ql-code-block"></button>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-list" value="ordered"></button>
+                        <button class="ql-list" value="bullet"></button>
+                        <button class="ql-indent" value="-1"></button>
+                        <button class="ql-indent" value="+1"></button>
+                    </span>
+                    <span class="ql-formats">
+                        <select class="ql-align"></select>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-link"></button>
+                        <button class="ql-image"></button>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-clean"></button>
+                    </span>
+                </div>
+                <div id="quill-editor"></div>
+                
+                <div id="slide-editor-container">
+                    <textarea id="slide-editor-textarea"></textarea>
+                    <div id="slide-editor-guide">
+                        <strong>Formatting Guide:</strong>
+                        <code># Heading</code> &nbsp;&nbsp;
+                        <code>* Bullet point</code> &nbsp;&nbsp;
+                        <code>1. Numbered list</code> &nbsp;&nbsp;
+                        <code>---</code> (on a new line) for a <strong>New Slide</strong>
+                    </div>
+                </div>
+
+                <div id="spreadsheet-placeholder">Spreadsheet Editor (e.g., Handsontable) would be initialized here.</div>
+                
+            </div>
+        </main>
+    </div>
+
+    <div id="new-item-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="new-item-title">Create New</h3>
+            <label for="new-item-type">Type:</label>
+            <select id="new-item-type">
+                <option value="folder">Folder</option>
+                <option value="doc">Rich Text Document</option>
+                <option value="sheet">Spreadsheet</option>
+                <option value="slide">Presentation</option>
+            </select>
+            <label for="new-item-name">Name:</label>
+            <input type="text" id="new-item-name" placeholder="Untitled">
+            <p id="new-item-error" class="auth-error"></p>
+            <div class="modal-buttons">
+                <button id="new-item-cancel" class="btn-secondary">Cancel</button>
+                <button id="new-item-create" class="btn-primary">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="share-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Share Item</h3>
+            <p id="share-error" class="auth-error"></p>
+            <div class="modal-share-row">
+                <input type="email" id="share-email" placeholder="Enter user's email">
+                <select id="share-permission">
+                    <option value="view">View</option>
+                    <option value="edit">Edit</option>
+                </select>
+            </div>
+            <button id="share-save-button" class="auth-button">Share</button>
+            
+            <h4>Currently Shared With:</h4>
+            <div id="current-shares-list"></div>
+            
+            <div class="modal-buttons">
+                <button id="share-close-button" class="btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="presentation-view">
+        <button id="presentation-close-button">&times;</button>
+        <div class="reveal">
+            <div class="slides" id="presentation-slides-container">
+                </div>
+        </div>
+    </div>
+
+
+    <script>
+        // --- Initialize Supabase ---
+        // TODO: Replace with your project's URL and Anon Key
+        const SUPABASE_URL = 'https://szbenfdqlqfjbgpodqal.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6YmVuZmRxbHFmamJncG9kcWFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE4NjA5NDEsImV4cCI6MjA3NzQzNjk0MX0.DvZz5SRXLhq8X0nCm5aOXh79w6p-zDQLqjsEUz-Sdtc'; 
+        
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // --- Global App State ---
+        let currentUser = null;
+        let currentFolderId = null; // null is the root folder
+        let breadcrumbs = [{ id: null, name: 'My Drive' }];
+        let currentEditingItem = null;
+        let quill = null;
+        let saveTimeout = null;
+        let revealDeck = null; // For the presentation
+
+        // --- DOM Elements ---
+        const loadingDiv = document.getElementById('loading-container');
+        const authContainer = document.getElementById('auth-container');
+        const appContainer = document.getElementById('app-container');
+        const fileView = document.getElementById('file-view');
+        const editorView = document.getElementById('editor-view');
+        
+        // Auth
+        const loginForm = document.getElementById('login-form');
+        const signupForm = document.getElementById('signup-form');
+        const loginButton = document.getElementById('login-button');
+        const signupButton = document.getElementById('signup-button');
+        const logoutButton = document.getElementById('logout-button');
+        const toggleToSignup = document.getElementById('toggle-to-signup');
+        const toggleToLogin = document.getElementById('toggle-to-login');
+        const loginError = document.getElementById('login-error');
+        const signupError = document.getElementById('signup-error');
+
+        // Sidebar
+        const storageText = document.getElementById('storage-text');
+        const storageBarFill = document.getElementById('storage-bar-fill');
+        const navMyDrive = document.getElementById('nav-my-drive');
+        const navShared = document.getElementById('nav-shared');
+
+        // File View
+        const fileList = document.getElementById('file-list');
+        const newButton = document.getElementById('new-button');
+        const breadcrumbsDiv = document.getElementById('breadcrumbs');
+
+        // Editor View
+        const backButton = document.getElementById('back-button');
+        const editorFilename = document.getElementById('editor-filename');
+        const editorStatus = document.getElementById('editor-status');
+        
+        // Quill (Doc) Editor
+        const quillEditorEl = document.getElementById('quill-editor');
+        const quillToolbarEl = document.getElementById('quill-toolbar');
+        
+        // NEW Slide Editor
+        const slideEditorContainer = document.getElementById('slide-editor-container');
+        const slideEditorTextarea = document.getElementById('slide-editor-textarea');
+
+        // Spreadsheet Placeholder
+        const sheetPlaceholder = document.getElementById('spreadsheet-placeholder');
+        
+        // Presentation
+        const presentButton = document.getElementById('present-button');
+        const presentationView = document.getElementById('presentation-view');
+        const presentationCloseButton = document.getElementById('presentation-close-button');
+        const presentationSlidesContainer = document.getElementById('presentation-slides-container');
+
+
+        // Modals
+        const newItemModal = document.getElementById('new-item-modal');
+        const newItemNameInput = document.getElementById('new-item-name');
+        const newItemTypeInput = document.getElementById('new-item-type');
+        const newItemError = document.getElementById('new-item-error');
+        const newItemCancel = document.getElementById('new-item-cancel');
+        const newItemCreate = document.getElementById('new-item-create');
+        
+        const shareModal = document.getElementById('share-modal');
+        const shareEmailInput = document.getElementById('share-email');
+        const sharePermissionInput = document.getElementById('share-permission');
+        const shareSaveButton = document.getElementById('share-save-button');
+        const shareCloseButton = document.getElementById('share-close-button');
+        const shareError = document.getElementById('share-error');
+        const currentSharesList = document.getElementById('current-shares-list');
+        let currentShareItemId = null; // Store which item we are sharing
+
+
+        // --- Utility Functions ---
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        /**
+         * Parses simple markdown for slides
+         */
+        function parseSlideMarkdown(text) {
+            const lines = text.split('\n');
+            let html = '';
+            let inUl = false;
+            let inOl = false;
+
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+
+                // Check for ordered lists
+                if (trimmedLine.match(/^\d+\.\s/)) {
+                    if (inUl) { html += '</ul>\n'; inUl = false; } // Close previous list
+                    if (!inOl) { html += '<ol>\n'; inOl = true; } // Start new list
+                    html += `<li>${trimmedLine.replace(/^\d+\.\s/, '')}</li>\n`;
+                
+                // Check for unordered lists
+                } else if (trimmedLine.startsWith('* ') || trimmedLine.startsWith('- ')) {
+                    if (inOl) { html += '</ol>\n'; inOl = false; } // Close previous list
+                    if (!inUl) { html += '<ul>\n'; inUl = true; } // Start new list
+                    html += `<li>${trimmedLine.substring(2)}</li>\n`;
+                
+                // Check for headings
+                } else if (trimmedLine.startsWith('# ')) {
+                    if (inUl) { html += '</ul>\n'; inUl = false; }
+                    if (inOl) { html += '</ol>\n'; inOl = false; }
+                    html += `<h2>${trimmedLine.substring(2)}</h2>\n`;
+                
+                // Empty line
+                } else if (trimmedLine.length === 0) {
+                    if (inUl) { html += '</ul>\n'; inUl = false; }
+                    if (inOl) { html += '</ol>\n'; inOl = false; }
+                    html += '<br>';
+                
+                // Regular text
+                } else {
+                    if (inUl) { html += '</ul>\n'; inUl = false; }
+                    if (inOl) { html += '</ol>\n'; inOl = false; }
+                    html += `<p>${trimmedLine}</p>\n`;
+                }
+            }
+            // Close any remaining open lists
+            if (inUl) html += '</ul>\n';
+            if (inOl) html += '</ol>\n';
+            return html;
+        }
+
+
+        // --- MASTER AUTH LOGIC ---
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            if (session) {
+                currentUser = session.user;
+                appContainer.style.display = 'flex';
+                authContainer.style.display = 'none';
+                loadingDiv.style.display = 'none';
+                closeEditor(); // Ensure we start in file view
+                loadDriveItems(currentFolderId);
+                loadStorageQuota();
+                if (!quill) initializeQuill(); // Only init quill once
+            } else {
+                currentUser = null;
+                appContainer.style.display = 'none';
+                authContainer.style.display = 'block';
+                loadingDiv.style.display = 'none';
+            }
+        });
+
+        // --- Auth Event Handlers ---
+        toggleToSignup.onclick = () => {
+            loginForm.classList.remove('active');
+            signupForm.classList.add('active');
+            loginError.textContent = "";
+        };
+        toggleToLogin.onclick = () => {
+            signupForm.classList.remove('active');
+            loginForm.classList.add('active');
+            signupError.textContent = "";
+        };
+
+        signupButton.onclick = async () => {
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            signupError.textContent = "";
+            const { error } = await supabaseClient.auth.signUp({ email, password });
+            if (error) {
+                signupError.textContent = error.message;
+            } else {
+                signupError.textContent = "Sign up successful! Please check your email to confirm.";
+            }
+        };
+
+        loginButton.onclick = async () => {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            loginError.textContent = "";
+            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) loginError.textContent = error.message;
+        };
+
+        logoutButton.onclick = () => supabaseClient.auth.signOut();
+
+        // --- Sidebar & Storage ---
+        navMyDrive.onclick = () => {
+            navShared.classList.remove('active');
+            navMyDrive.classList.add('active');
+            currentFolderId = null;
+            breadcrumbs = [{ id: null, name: 'My Drive' }];
+            loadDriveItems(null);
+        };
+
+        navShared.onclick = () => {
+            navShared.classList.add('active');
+            navMyDrive.classList.remove('active');
+            // TODO: Implement loadSharedItems()
+            alert('Loading shared items is not yet implemented.');
+            fileList.innerHTML = '<p>Shared items would appear here.</p>';
+            renderBreadcrumbs([{ id: 'shared', name: 'Shared with Me' }]);
+        };
+
+        async function loadStorageQuota() {
+            // 1. Get usage
+            const { data: usage, error: usageError } = await supabaseClient.rpc('get_my_total_storage_usage');
+            if (usageError) console.error('Error fetching usage:', usageError);
+
+            // 2. Get limit
+            const { data: profile, error: profileError } = await supabaseClient
+                .from('profiles')
+                .select('storage_limit_bytes')
+                .eq('id', currentUser.id)
+                .single();
+            if (profileError) console.error('Error fetching profile:', profileError);
+
+            if (profile && usage !== null) {
+                const limit = profile.storage_limit_bytes;
+                const percent = (usage / limit) * 100;
+                storageText.textContent = `${formatBytes(usage)} / ${formatBytes(limit)}`;
+                storageBarFill.style.width = `${percent > 100 ? 100 : percent}%`;
+            }
+        }
+
+        // --- Breadcrumb Navigation ---
+        function renderBreadcrumbs() {
+            breadcrumbsDiv.innerHTML = '';
+            breadcrumbs.forEach((crumb, index) => {
+                const crumbEl = document.createElement('span');
+                crumbEl.textContent = crumb.name;
+                crumbEl.onclick = () => {
+                    if (index === breadcrumbs.length - 1) return; // Already here
+                    breadcrumbs = breadcrumbs.slice(0, index + 1);
+                    currentFolderId = crumb.id;
+                    loadDriveItems(currentFolderId);
+                };
+                breadcrumbsDiv.appendChild(crumbEl);
+                if (index < breadcrumbs.length - 1) {
+                    breadcrumbsDiv.append(' / ');
+                }
+            });
+        }
+
+        // --- File/Folder List Logic ---
+        async function loadDriveItems(folderId) {
+            fileList.innerHTML = '<p>Loading...</p>';
+            let query = supabaseClient
+                .from('drive_items')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .order('item_type', { ascending: true }) // Folders first
+                .order('name', { ascending: true });
+
+            if (folderId === null) {
+                query = query.is('parent_id', null);
+            } else {
+                query = query.eq('parent_id', folderId);
+            }
+
+            const { data: items, error } = await query;
+            if (error) {
+                console.error('Error fetching items:', error);
+                fileList.innerHTML = '<p>Error loading items.</p>';
+                return;
+            }
+
+            fileList.innerHTML = '';
+            if (items.length === 0) {
+                fileList.innerHTML = '<p>This folder is empty.</p>';
+            }
+
+            items.forEach(renderItem);
+            renderBreadcrumbs();
+        }
+
+        function renderItem(item) {
+            const li = document.createElement('li');
+            li.className = 'file-item';
+            li.setAttribute('data-id', item.id);
+            li.setAttribute('data-name', item.name);
+
+            const icon = document.createElement('span');
+            icon.className = 'file-item-icon';
+            if (item.item_type === 'folder') icon.textContent = '📁';
+            else if (item.item_type === 'doc') icon.textContent = '📄';
+            else if (item.item_type === 'sheet') icon.textContent = '📊';
+            else if (item.item_type === 'slide') icon.textContent = '🖥️';
+
+            const name = document.createElement('span');
+            name.className = 'file-item-name';
+            name.textContent = item.name;
+
+            // Open item on click
+            li.onclick = (e) => {
+                if (e.target.closest('.file-item-actions')) return; // Ignore clicks on buttons
+                if (item.item_type === 'folder') {
+                    currentFolderId = item.id;
+                    breadcrumbs.push({ id: item.id, name: item.name });
+                    loadDriveItems(item.id);
+                } else {
+                    // ALL files now open in the editor first
+                    openFileEditor(item); 
+                }
+            };
+
+            // Action buttons
+            const actions = document.createElement('div');
+            actions.className = 'file-item-actions';
+
+            const shareBtn = document.createElement('button');
+            shareBtn.title = 'Share';
+            shareBtn.innerHTML = '&#128101;'; // Share icon
+            shareBtn.onclick = () => openShareModal(item.id);
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.title = 'Delete';
+            deleteBtn.innerHTML = '&times;';
+            deleteBtn.onclick = () => deleteItem(item.id);
+            
+            actions.append(shareBtn, deleteBtn);
+            li.append(icon, name, actions);
+            fileList.appendChild(li);
+        }
+
+        // --- File/Folder CRUD ---
+        async function deleteItem(itemId) {
+            if (confirm("Are you sure you want to delete this item? This cannot be undone.")) {
+                const { error } = await supabaseClient
+                    .from('drive_items')
+                    .delete()
+                    .eq('id', itemId);
+                
+                if (error) {
+                    console.error('Error deleting:', error);
+                    alert('Error: ' + error.message);
+                } else {
+                    loadDriveItems(currentFolderId);
+                    loadStorageQuota(); // Update storage
+                }
+            }
+        }
+
+        async function renameItem(itemId, newName) {
+            editorStatus.textContent = 'Saving...';
+            const { error } = await supabaseClient
+                .from('drive_items')
+                .update({ name: newName, updated_at: new Date() })
+                .eq('id', itemId);
+            if (error) {
+                console.error('Error renaming:', error);
+                editorStatus.textContent = 'Error saving name!';
+                return false;
+            }
+            editorStatus.textContent = 'Saved';
+            return true;
+        }
+
+        // --- Editor View Logic ---
+        function initializeQuill() {
+            // This is the "Word-like" toolbar configuration
+            const toolbarOptions = [
+                [{ 'font': [] }, { 'size': ['small', false, 'large', 'huge'] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'color': [] }, { 'background': [] }],
+                [{ 'script': 'sub'}, { 'script': 'super' }],
+                [{ 'header': 1 }, { 'header': 2 }, 'blockquote', 'code-block'],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'indent': '-1'}, { 'indent': '+1' }],
+                [{ 'align': [] }],
+                ['link', 'image'],
+                ['clean']
+            ];
+
+            quill = new Quill('#quill-editor', {
+                modules: {
+                    toolbar: toolbarOptions
+                },
+                theme: 'snow'
+            });
+
+            // Auto-save logic for Quill (Docs)
+            quill.on('text-change', (delta, oldDelta, source) => {
+                if (source == 'user' && currentEditingItem && currentEditingItem.item_type === 'doc') {
+                    editorStatus.textContent = 'Saving...';
+                    clearTimeout(saveTimeout);
+                    saveTimeout = setTimeout(async () => {
+                        const content = quill.getContents(); // This is JSON
+                        const newText = quill.getText();
+                        const newSize = new TextEncoder().encode(newText).length;
+
+                        const { error } = await supabaseClient
+                            .from('drive_items')
+                            .update({ 
+                                content: content, 
+                                size_bytes: newSize,
+                                updated_at: new Date() 
+                            })
+                            .eq('id', currentEditingItem.id);
+                        
+                        if (error) {
+                            editorStatus.textContent = 'Error saving!';
+                            console.error(error);
+                        } else {
+                            editorStatus.textContent = 'Saved';
+                            loadStorageQuota(); // Update storage
+                        }
+                    }, 1500); // Save 1.5s after user stops typing
+                }
+            });
+        }
+
+        // Auto-save logic for the NEW Slide Editor (Textarea)
+        slideEditorTextarea.addEventListener('input', () => {
+            if (currentEditingItem && currentEditingItem.item_type === 'slide') {
+                editorStatus.textContent = 'Saving...';
+                clearTimeout(saveTimeout);
+                saveTimeout = setTimeout(async () => {
+                    const content = slideEditorTextarea.value; // This is simple text
+                    const newSize = new TextEncoder().encode(content).length;
+
+                    const { error } = await supabaseClient
+                        .from('drive_items')
+                        .update({ 
+                            content: content, 
+                            size_bytes: newSize,
+                            updated_at: new Date() 
+                        })
+                        .eq('id', currentEditingItem.id);
+                    
+                    if (error) {
+                        editorStatus.textContent = 'Error saving!';
+                        console.error(error);
+                    } else {
+                        editorStatus.textContent = 'Saved';
+                        loadStorageQuota(); // Update storage
+                    }
+                }, 1500); // Save 1.5s after user stops typing
+            }
+        });
+        
+        /**
+         * Main function to open a file's editor view.
+         */
+        function openFileEditor(item) {
+            currentEditingItem = item;
+            fileView.style.display = 'none';
+            editorView.style.display = 'flex';
+            editorFilename.value = item.name;
+            editorStatus.textContent = 'Loaded';
+            
+            // Hide all editor types by default
+            quillEditorEl.style.display = 'none';
+            quillToolbarEl.style.display = 'none';
+            sheetPlaceholder.style.display = 'none';
+            slideEditorContainer.style.display = 'none';
+            presentButton.style.display = 'none';
+
+            // Show the correct editor
+            if (item.item_type === 'doc') {
+                quillEditorEl.style.display = 'block';
+                quillToolbarEl.style.display = 'block';
+                quill.enable();
+                if (item.content) {
+                    quill.setContents(item.content);
+                } else {
+                    quill.setText(''); // Clear old content
+                }
+            } else if (item.item_type === 'slide') {
+                slideEditorContainer.style.display = 'flex';
+                presentButton.style.display = 'block';
+                quill.disable();
+                // Load simple text content into the textarea
+                slideEditorTextarea.value = item.content || '';
+            } else if (item.item_type === 'sheet') {
+                sheetPlaceholder.style.display = 'block';
+                quill.disable();
+            }
+        }
+
+        function closeEditor() {
+            fileView.style.display = 'flex';
+            editorView.style.display = 'none';
+            currentEditingItem = null;
+        }
+        
+        backButton.onclick = closeEditor;
+        
+        editorFilename.addEventListener('blur', (e) => {
+            if (currentEditingItem && currentEditingItem.name !== e.target.value) {
+                renameItem(currentEditingItem.id, e.target.value);
+            }
+        });
+        editorFilename.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.target.blur();
+            }
+        });
+
+        // --- New Item Modal ---
+        newButton.onclick = () => {
+            newItemNameInput.value = '';
+            newItemError.textContent = '';
+            newItemModal.style.display = 'flex';
+        };
+        newItemCancel.onclick = () => newItemModal.style.display = 'none';
+        
+        newItemCreate.onclick = async () => {
+            const name = newItemNameInput.value.trim() || 'Untitled';
+            const type = newItemTypeInput.value;
+            let initialContent = null;
+            
+            if (type === 'doc') {
+                initialContent = { ops: [{ insert: '\n' }] }; // Quill's empty state
+            } else if (type === 'slide') {
+                // Set default slide content
+                initialContent = "# My First Slide\n---\n# My Second Slide\n* Add bullet points\n* Like this";
+            }
+
+            const { data: newItem, error } = await supabaseClient
+                .from('drive_items')
+                .insert({
+                    name: name,
+                    item_type: type,
+                    parent_id: currentFolderId,
+                    user_id: currentUser.id,
+                    content: initialContent
+                })
+                .select()
+                .single();
+
+            if (error) {
+                newItemError.textContent = error.message;
+            } else {
+                newItemModal.style.display = 'none';
+                loadDriveItems(currentFolderId); // Refresh file list
+                if (newItem.item_type !== 'folder') {
+                    openFileEditor(newItem); // Open editor immediately
+                }
+            }
+        };
+        
+        // --- Share Modal Logic ---
+        shareCloseButton.onclick = () => {
+            shareModal.style.display = 'none';
+        };
+
+        async function openShareModal(itemId) {
+            currentShareItemId = itemId;
+            shareEmailInput.value = '';
+            shareError.textContent = '';
+            shareModal.style.display = 'flex';
+            loadCurrentShares(itemId);
+        }
+
+        async function loadCurrentShares(itemId) {
+            currentSharesList.innerHTML = '<p>Loading...</p>';
+            const { data: shares, error } = await supabaseClient
+                .from('item_shares')
+                .select('*')
+                .eq('item_id', itemId);
+            
+            if (error) {
+                currentSharesList.innerHTML = '<p>Error loading shares.</p>';
+                return;
+            }
+            
+            if (shares.length === 0) {
+                currentSharesList.innerHTML = '<p>Not shared with anyone yet.</p>';
+                return;
+            }
+
+            currentSharesList.innerHTML = '';
+            shares.forEach(share => {
+                const item = document.createElement('div');
+                item.className = 'share-item';
+                item.innerHTML = `
+                    <span>${share.shared_with_email} (${share.permission_level})</span>
+                    <button class="unshare-button" data-share-id="${share.id}">&times;</button>
+                `;
+                currentSharesList.appendChild(item);
+            });
+        }
+        
+        currentSharesList.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('unshare-button')) {
+                const shareId = e.target.getAttribute('data-share-id');
+                const { error } = await supabaseClient
+                    .from('item_shares')
+                    .delete()
+                    .eq('id', shareId);
+                
+                if (error) {
+                    shareError.textContent = error.message;
+                } else {
+                    loadCurrentShares(currentShareItemId); // Refresh list
+                }
+            }
+        });
+
+        shareSaveButton.onclick = async () => {
+            const email = shareEmailInput.value;
+            const permission = sharePermissionInput.value;
+            
+            if (!email) {
+                shareError.textContent = "Please enter an email.";
+                return;
+            }
+            if (email === currentUser.email) {
+                shareError.textContent = "You cannot share an item with yourself.";
+                return;
+            }
+
+            shareSaveButton.disabled = true;
+            shareError.textContent = "";
+
+            const { error } = await supabaseClient
+                .from('item_shares')
+                .insert({
+                    item_id: currentShareItemId,
+                    shared_by_user_id: currentUser.id,
+                    shared_with_email: email,
+                    permission_level: permission
+                });
+
+            if (error) {
+                if (error.code === '23505') { // Unique constraint violation
+                    shareError.textContent = "Already shared with this user.";
+                } else {
+                    shareError.textContent = "Error: " + error.message;
+                }
+            } else {
+                shareEmailInput.value = ''; // Clear input on success
+                loadCurrentShares(currentShareItemId); // Refresh modal list
+            }
+            shareSaveButton.disabled = false;
+        };
+
+        // --- Presentation Fullscreen ---
+        presentButton.onclick = () => {
+            openPresentation(currentEditingItem);
+        };
+
+        function openPresentation(item) {
+            // Build slides
+            presentationSlidesContainer.innerHTML = ''; // Clear old slides
+            
+            // Get content from the textarea if we are in the editor
+            // Otherwise, use the item's content
+            let content;
+            if (currentEditingItem && currentEditingItem.id === item.id) {
+                content = slideEditorTextarea.value;
+            } else {
+                content = item.content;
+            }
+            
+            if (!content) {
+                content = "# Welcome\n---\nYour presentation is empty.\n---\nUse the editor to add slides.";
+            }
+            
+            // Split by "---" to create slides
+            const slides = content.split('\n---\n');
+            
+            slides.forEach(slideText => {
+                const section = document.createElement('section');
+                // Use the parsing function to convert text to HTML
+                section.innerHTML = parseSlideMarkdown(slideText);
+                presentationSlidesContainer.appendChild(section);
+            });
+
+            // Show the presentation view
+            presentationView.style.display = 'block';
+
+            // Initialize Reveal.js
+            if (revealDeck) {
+                revealDeck.destroy(); // Destroy old instance if it exists
+            }
+            revealDeck = new Reveal(document.querySelector('.reveal'), {
+                embedded: true, // Important for it to work in our modal
+            });
+            revealDeck.initialize();
+        }
+        
+        function closePresentation() {
+            presentationView.style.display = 'none';
+            if (revealDeck) {
+                revealDeck.destroy(); // Clean up
+                revealDeck = null;
+            }
+            presentationSlidesContainer.innerHTML = ''; // Clear slides
+        }
+        
+        presentationCloseButton.onclick = closePresentation;
+
+    </script>
+</body>
+</html>
