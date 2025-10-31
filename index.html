@@ -260,47 +260,121 @@
             color: #999;
         }
 
-        /* --- Auth View --- */
+        /* --- Auth View (NEW BEAUTIFUL STYLES) --- */
         #auth-container, #loading-container {
             display: none;
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: #f4f4f9;
+            /* NEW subtle gradient background */
+            background: linear-gradient(120deg, #f9f9f9 0%, #e8f1f8 100%);
             justify-content: center;
             align-items: center;
             z-index: 2000;
         }
         #loading-container { display: flex; }
+        
         .auth-box {
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
             background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            padding: 25px;
+            /* NEW modern shadow and border */
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+            padding: 40px;
+            /* NEW: Added for the title */
+            position: relative;
+            overflow: hidden;
         }
+        
+        /* NEW: Adds "Pro Suite" title using CSS */
+        .auth-box::before {
+            content: 'Pro Suite';
+            display: block;
+            text-align: center;
+            font-size: 28px;
+            font-weight: 600;
+            color: #3ecf8e; /* Brand color */
+            margin-bottom: 30px;
+        }
+        
         .auth-form { display: none; }
         .auth-form.active { display: block; }
-        .auth-form h2 { text-align: center; color: #4a4a4a; margin-top: 0; }
+        
+        .auth-form h2 {
+            text-align: center;
+            color: #333; /* Darker text */
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-size: 22px; /* Slightly smaller */
+        }
+        
         .auth-form input {
-            width: 100%; padding: 10px; margin-bottom: 15px;
-            border: 1px solid #ddd; border-radius: 6px; font-size: 16px;
+            width: 100%;
+            padding: 14px; /* Taller inputs */
+            margin-bottom: 15px;
+            /* NEW input styling */
+            background-color: #f7f7f7;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
         }
+        
+        /* NEW focus glow */
+        .auth-form input:focus {
+            border-color: #3ecf8e;
+            background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(62, 207, 142, 0.2);
+            outline: none;
+        }
+        
         .auth-button {
-            display: block; width: 100%; padding: 12px; font-size: 16px;
-            font-weight: bold; color: #fff; background-color: #3ecf8e;
-            border: none; border-radius: 6px; cursor: pointer; margin-bottom: 10px;
+            display: block;
+            width: 100%;
+            padding: 14px; /* Taller button */
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #3ecf8e;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            /* NEW transitions for hover effect */
+            transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
         }
-        .auth-button:hover { background-color: #36b17c; }
+        
+        /* NEW hover "lift" effect */
+        .auth-button:hover {
+            background-color: #36b17c;
+            box-shadow: 0 4px 12px rgba(62, 207, 142, 0.3);
+            transform: translateY(-2px);
+        }
+        
         .form-toggle {
-            color: #3ecf8e; text-decoration: underline; cursor: pointer;
-            text-align: center; display: block; margin-top: 15px;
+            color: #3ecf8e;
+            text-decoration: underline;
+            cursor: pointer;
+            text-align: center;
+            display: block;
+            margin-top: 20px; /* More space */
+            font-weight: 500;
         }
+        .form-toggle:hover {
+            color: #36b17c;
+        }
+        
         .auth-error {
-            color: red; font-size: 14px; text-align: center;
-            margin-bottom: 10px; min-height: 1.2em;
+            color: red;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 10px;
+            min-height: 1.2em;
         }
+        /* --- END Auth View Styles --- */
+
 
         /* --- Modal --- */
         .modal-overlay {
@@ -626,7 +700,7 @@
         const quillEditorEl = document.getElementById('quill-editor');
         const quillToolbarEl = document.getElementById('quill-toolbar');
         
-        // NEW Slide Editor
+        // Slide Editor
         const slideEditorContainer = document.getElementById('slide-editor-container');
         const slideEditorTextarea = document.getElementById('slide-editor-textarea');
 
@@ -1005,6 +1079,9 @@
                     const content = slideEditorTextarea.value; // This is simple text
                     const newSize = new TextEncoder().encode(content).length;
 
+                    // Update the item in our local state first for the presenter
+                    currentEditingItem.content = content; 
+                    
                     const { error } = await supabaseClient
                         .from('drive_items')
                         .update({ 
